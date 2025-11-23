@@ -120,7 +120,7 @@ Para rodar a simulação na nuvem, precisamos configurar o ambiente virtual.
     ```text
     PubSubClient
     ArduinoJson
-    DHT sensor library for ESPx
+    DHT sensor library
     ```
 3.  **Configure o Hardware (`diagram.json`):**
     Clique na aba `diagram.json` e substitua todo o código pelo conteúdo do arquivo `diagram.json` deste repositório.
