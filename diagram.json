@@ -1,25 +1,56 @@
 {
   "version": 1,
-  "author": "Xingó Cold",
+  "author": "Equipe Arabian Nights",
   "editor": "wokwi",
   "parts": [
-    { "type": "board-esp32-devkit-v1", "id": "esp", "top": 0, "left": 0, "attrs": {} },
-    { "type": "wokwi-dht22", "id": "dht1", "top": -86.1, "left": 137.4, "attrs": {} },
-    { "type": "wokwi-slide-switch", "id": "sw1", "top": 126.8, "left": 156.9, "attrs": {} },
-    { "type": "wokwi-led", "id": "led1", "top": 54, "left": 167, "attrs": { "color": "green" } },
-    { "type": "wokwi-resistor", "id": "r1", "top": 147.95, "left": 230.4, "attrs": { "value": "220" } }
+    {
+      "type": "board-esp32-devkit-c-v4",
+      "id": "esp",
+      "top": 0,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-dht22",
+      "id": "dht1",
+      "top": -76.8,
+      "left": -116.6,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-pir-motion-sensor",
+      "id": "pir1",
+      "top": 55.4,
+      "left": -118.8,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led1",
+      "top": -32.4,
+      "left": 167,
+      "attrs": { "color": "red" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r1",
+      "top": 24.95,
+      "left": 167,
+      "attrs": { "value": "220" }
+    }
   ],
   "connections": [
-    [ "esp:TX0", "$serialMonitor:RX", "", [] ],
-    [ "esp:RX0", "$serialMonitor:TX", "", [] ],
+    [ "esp:TX", "serial:RX", "", [] ],
+    [ "esp:RX", "serial:TX", "", [] ],
     [ "dht1:VCC", "esp:3V3", "red", [ "v0" ] ],
-    [ "dht1:SDA", "esp:4", "blue", [ "v0" ] ],
     [ "dht1:GND", "esp:GND.1", "black", [ "v0" ] ],
-    [ "sw1:1", "esp:GND.2", "black", [ "v0" ] ],
-    [ "sw1:2", "esp:27", "green", [ "v0" ] ],
-    [ "sw1:3", "esp:3V3", "red", [ "v0" ] ],
-    [ "led1:A", "esp:25", "green", [ "v0" ] ],
-    [ "led1:C", "r1:1", "green", [ "v0" ] ],
-    [ "r1:2", "esp:GND.1", "black", [ "v0" ] ]
-  ]
+    [ "dht1:SDA", "esp:32", "green", [ "v0" ] ],
+    [ "pir1:VCC", "esp:5V", "red", [ "v0" ] ],
+    [ "pir1:GND", "esp:GND.2", "black", [ "v0" ] ],
+    [ "pir1:OUT", "esp:27", "purple", [ "h0" ] ],
+    [ "esp:25", "led1:A", "green", [ "h0" ] ],
+    [ "led1:C", "r1:1", "black", [ "v0" ] ],
+    [ "r1:2", "esp:GND.2", "black", [ "v0" ] ]
+  ],
+  "dependencies": {}
 }
