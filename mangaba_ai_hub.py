@@ -1,84 +1,119 @@
 import paho.mqtt.client as mqtt
 import time
 import json
+import sys
 
-# --- Configurações MQTT ---
+# ================= CONFIGURAÇÕES =================
 MQTT_BROKER_HOST = "test.mosquitto.org"
 MQTT_BROKER_PORT = 1883
-TOPIC_SENSOR_DATA = "mangaba/sala/sensor"
-TOPIC_AC_CONTROL = "mangaba/sala/controle"
+TOPIC_SENSOR = "mangaba/sala/sensor"
+TOPIC_CONTROL = "mangaba/sala/controle"
+TOPIC_ALERT = "mangaba/sala/alerta"   # tópico opcional para alertas
 
-# --- Estado da Inteligência ---
-class EstadoSala:
+TEMP_LIMITE_CONFORTO = 24.0
+TIMEOUT_DESLIGAR = 15   # segundos sem gente para desligar
+
+# ================= MEMÓRIA =================
+class Estado:
     def __init__(self):
-        self.ac_virtual_status = "OFF"  # O que a Mangaba ACHOU que fez
-        self.last_movement_time = 0
-        self.current_temp = 25.0
-        self.current_humid = 60.0
-        self.target_temp = 23.0         # Meta de conforto
+        self.ultimo_movimento = 0.0
+        self.ac_ligado = False
 
-estado = EstadoSala()
+memoria = Estado()
 
-# --- Constantes de Decisão ---
-TIMEOUT_SEM_MOVIMENTO = 15  # Segundos para desligar (Demo)
-TEMP_LIMITE_LIGAR = 26.0    # Se > 26°C e tem gente, liga
-TEMP_ALERTA_FALHA = 28.0    # Se AC tá "ON" mas temp continua alta
+# ================= LÓGICA PRINCIPAL =================
+def processar_dados(dados):
+    global memoria
 
-def mangaba_ai_logic(dados):
-    """
-    Cérebro da Mangaba AI: Analisa sensores e infere estado real
-    """
-    global estado
-    
-    # 1. Atualiza percepção do ambiente
-    movimento = dados.get("movement", False)
-    estado.current_temp = dados.get("temperature", 25.0)
-    estado.current_humid = dados.get("humidity", 60.0)
     agora = time.time()
+    movimento = bool(dados.get("movement", False))
+    # Garantir conversão segura — se a chave não existir, usar 0.0
+    try:
+        temperatura = float(dados.get("temperature", 0.0))
+    except (ValueError, TypeError):
+        temperatura = 0.0
+    try:
+        umidade = float(dados.get("humidity", 0.0))
+    except (ValueError, TypeError):
+        umidade = 0.0
+
+    print(f"📊 Recebido: Movimento={movimento} | Temp={temperatura:.1f}°C | Umid={umidade:.1f}%")
 
     if movimento:
-        estado.last_movement_time = agora
-        print(f"👀 Movimento detectado! | Temp: {estado.current_temp}°C")
+        memoria.ultimo_movimento = agora
+        print("👀 Presença detectada!")
 
-    # 2. Inferência de Estado (A sacada do Gabriel!)
-    # Verifica se o AC está realmente funcionando
-    if estado.ac_virtual_status == "ON" and estado.current_temp > TEMP_ALERTA_FALHA:
-        print(f"⚠️ ALERTA: AC deveria estar ligado, mas sala está quente ({estado.current_temp}°C). Possível janela aberta!")
-
-    # 3. Tomada de Decisão
-    
-    # REGRA A: Ligar AC (Conforto)
-    # Se tem gente E (tá quente OU umidade alta) E AC tá desligado
-    if movimento and (estado.current_temp >= TEMP_LIMITE_LIGAR) and estado.ac_virtual_status == "OFF":
-        print(f"🔥 Sala ocupada e quente ({estado.current_temp}°C). Ligando AC...")
-        client.publish(TOPIC_AC_CONTROL, "ON")
-        estado.ac_virtual_status = "ON"
+    # REGRA A: LIGAR AC (tem gente + quente)
+    if movimento and temperatura > TEMP_LIMITE_CONFORTO and not memoria.ac_ligado:
+        print("🔥 Calor + presença → Ligando AC...")
+        client.publish(TOPIC_CONTROL, "ON")
+        memoria.ac_ligado = True
         return
 
-    # REGRA B: Desligar AC (Economia)
-    # Se não tem gente há X tempo E AC tá ligado
-    tempo_ocioso = agora - estado.last_movement_time
-    if estado.ac_virtual_status == "ON" and tempo_ocioso > TIMEOUT_SEM_MOVIMENTO:
-        print(f"📉 Sala vazia por {int(tempo_ocioso)}s. Economizando energia...")
-        client.publish(TOPIC_AC_CONTROL, "OFF")
-        estado.ac_virtual_status = "OFF"
+    # REGRA B: DESLIGAR AC (vazio por TIMEOUT_DESLIGAR)
+    tempo_sem_gente = agora - memoria.ultimo_movimento
+    if memoria.ac_ligado and tempo_sem_gente > TIMEOUT_DESLIGAR:
+        print(f"❄️ Sala vazia há {int(tempo_sem_gente)}s → Desligando AC.")
+        client.publish(TOPIC_CONTROL, "OFF")
+        memoria.ac_ligado = False
         return
 
-# --- Callbacks MQTT ---
-def on_connect(client, userdata, flags, rc):
+    # REGRA C: ALERTA (AC ligado mas temperatura continua alta)
+    if memoria.ac_ligado and temperatura > 29.0:
+        msg = "AC_INEFICIENTE"
+        print("⚠️ ALERTA: AC está ligado mas a sala continua quente! Publicando alerta.")
+        client.publish(TOPIC_ALERT, msg)
+
+# ================= CALLBACKS MQTT =================
+def on_connect(client_obj, userdata, flags, rc):
     if rc == 0:
-        print(f"✅ Mangaba AI Conectada! Monitorando {TOPIC_SENSOR_DATA}...")
-        client.subscribe(TOPIC_SENSOR_DATA)
+        print("✅ Mangaba AI conectada ao broker!")
+        client_obj.subscribe(TOPIC_SENSOR)
     else:
-        print(f"❌ Falha na conexão. Código: {rc}")
+        print(f"❌ Erro de conexão MQTT: rc={rc}")
 
-def on_message(client, userdata, msg):
+def on_message(client_obj, userdata, msg):
     try:
-        payload = msg.payload.decode()
+        payload = msg.payload.decode('utf-8')
         dados = json.loads(payload)
-        mangaba_ai_logic(dados)
+        processar_dados(dados)
+    except json.JSONDecodeError as e:
+        print(f"❌ JSON inválido: {e} — payload: {msg.payload!r}")
     except Exception as e:
-        print(f"❌ Erro ao processar dados: {e}")
+        print(f"❌ Erro ao processar mensagem: {e}")
 
-# --- Inicialização ---
-print("🧠 Iniciando Mangaba AI Hub (com
+def on_disconnect(client_obj, userdata, rc):
+    print(f"🔌 Desconectado do broker (rc={rc}). Tentando reconectar...")
+
+# ================= INICIALIZAÇÃO E LOOP =================
+def main():
+    global client
+    print("🧠 Iniciando Mangaba AI...")
+
+    # Criar client com callback_api_version nomeado (paho 2.x compat)
+    client = mqtt.Client(
+        client_id="Mangaba_Brain_PC",
+        callback_api_version=mqtt.CallbackAPIVersion.VERSION1
+    )
+
+    client.on_connect = on_connect
+    client.on_message = on_message
+    client.on_disconnect = on_disconnect
+
+    # Conectar e entrar no loop
+    try:
+        client.connect(MQTT_BROKER_HOST, MQTT_BROKER_PORT, keepalive=60)
+    except Exception as e:
+        print(f"❌ Falha ao conectar ao broker: {e}")
+        sys.exit(1)
+
+    try:
+        # loop_forever faz reconexão automática por padrão
+        client.loop_forever()
+    except KeyboardInterrupt:
+        print("\n✋ Interrompido pelo usuário. Saindo...")
+    except Exception as e:
+        print(f"❌ Loop MQTT interrompido: {e}")
+
+if __name__ == "__main__":
+    main()
