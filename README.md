@@ -1,14 +1,13 @@
 <div align="center">
 
-# ❄️ Xingó Cold
-### Sistema Inteligente de Gestão Energética
-**Impulsionado por Mangaba AI 🧠**
+# 🌵 Mangaba AI
+### Soberania Energética & Inteligência IoT
+**Projeto Arabian Nights | Hackathon Energy AI**
 
-![Python](https://img.shields.io/badge/Python-3.x-blue?style=for-the-badge&logo=python&logoColor=white)
-![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
-![Raspberry Pi](https://img.shields.io/badge/Raspberry%20Pi-C51A4A?style=for-the-badge&logo=Raspberry-Pi&logoColor=white)
-![ESP32](https://img.shields.io/badge/Hardware-ESP32-red?style=for-the-badge&logo=espressif&logoColor=white)
-![MQTT](https://img.shields.io/badge/Protocolo-MQTT-orange?style=for-the-badge&logo=mqtt&logoColor=white)
+![Python](https://img.shields.io/badge/Brain-Python_3.x-blue?style=for-the-badge&logo=python&logoColor=white)
+![ESP32](https://img.shields.io/badge/Edge-ESP32-red?style=for-the-badge&logo=espressif&logoColor=white)
+![MQTT](https://img.shields.io/badge/Protocol-MQTT-orange?style=for-the-badge&logo=mqtt&logoColor=white)
+![Status](https://img.shields.io/badge/Status-MVP_Funcional-green?style=for-the-badge)
 
 </div>
 
@@ -16,172 +15,136 @@
 
 ## 🧠 Sobre a Mangaba AI
 
-> *"A inteligência que entende o ambiente para economizar energia de forma inteligente"*
+> *"Transformando hardware legado em eficiência energética de ponta."*
 
-**Mangaba AI** é o cérebro do sistema **Xingó Cold**, responsável por:
-* 🎯 **Análise preditiva** de padrões de uso.
-* 🌡️ **Monitoramento inteligente** de temperatura e ocupação.
-* 💡 **Otimização em tempo real** do consumo energético.
-* 📊 **Aprendizado contínuo** com dados dos sensores.
+O **Mangaba AI** é um sistema híbrido que desacopla a leitura de sensores da tomada de decisão. Diferente de sensores de presença comuns que desligam a luz quando você fica parado, nosso sistema utiliza **lógica fuzzy e persistência de dados** para garantir conforto térmico sem desperdício.
+
+### 🎯 Pilares da Solução
+* 🌡️ **Conforto:** Só liga o AC se houver gente **E** estiver quente.
+* 💰 **Economia:** Desliga automaticamente em salas vazias.
+* 🛠️ **Manutenção Preditiva:** Detecta se o AC está ligado mas não está gelando.
 
 ---
 
-## ⚙️ Arquitetura do Sistema (Visão Final)
+## ⚙️ Arquitetura do Sistema
 
-
-
-### 🎯 Objetivo do Produto Final
-Sistema completo de gestão energética usando **Raspberry Pi 4/5** (ou Linux) como unidade de processamento na borda (*edge computing*), sensores ESP32 distribuídos, e a **Mangaba AI** tomando decisões inteligentes para otimizar o consumo do ar condicionado.
-
-### 🔄 Arquitetura de Produção
+Neste MVP, simulamos o ambiente físico na nuvem enquanto o processamento neural ocorre localmente.
 
 ```mermaid
 graph LR
-    A[📟 ESP32 Sensores] -->|MQTT| B(🦟 Broker MQTT)
-    B -->|MQTT| C[🍓 Raspberry Pi / Linux]
-    C -->|Comando| B
-    B -->|Comando| A
-    subgraph Dispositivo de Borda
-    C
+    subgraph Wokwi Cloud
+    A[🌡️ DHT22 Sensor] -->|Leitura| B(📟 ESP32 Node)
+    C[👀 PIR Movimento] -->|Detecção| B
+    B -->|Atuação| D[💡 LED/Relé AC]
+    end
+
+    B <-->|MQTT Pub/Sub| E((☁️ Mosquitto Broker))
+
+    subgraph Mangaba Hub
+    E <-->|JSON Data| F[🧠 Python Script]
     end
 ````
 
-> **💡 INFORMAÇÃO IMPORTANTE: Linux = Raspberry Pi**
->
-> Rodar a Mangaba AI no Linux é **FUNCIONALMENTE IDÊNTICO** a rodar num Raspberry Pi real\!
->
->   * ✅ **Mesmo Sistema Operacional:** O Raspberry Pi OS é baseado em Debian Linux.
->   * ✅ **Mesmos Pacotes Python:** As bibliotecas são idênticas.
->   * ✅ **Mesmo Código:** O script roda em ambos sem modificações.
->   * ✅ **Portabilidade Total:** O que roda aqui, roda lá.
+### 💻 A Lógica do "Cérebro" (Python)
+
+| Cenário | Condição | Ação | Resultado |
+| :--- | :--- | :--- | :--- |
+| **Economia** | Sala Vazia + Quente | `OFF` (Mantém desligado) | Zero desperdício de energia. |
+| **Conforto** | Presença + Quente (\>24°C) | `ON` (Liga AC) | Conforto imediato. |
+| **Timeout** | Sala fica vazia por 15s | `OFF` (Desliga AC) | Economia automática. |
+| **Alerta** | AC Ligado + Temp não cai | `ALERT` (Log de Erro) | Aviso de manutenção. |
 
 -----
 
-## 🎭 Demo MVP (Simulação Atual para o Hackathon)
+## 🚀 Guia de Reprodução (Como Rodar)
 
-Para fins de demonstração, estamos simulando a arquitetura física:
+### 1\. O Cérebro (Seu Computador/Linux)
 
-| Componente | Função | Ferramenta Usada |
-| :--- | :--- | :--- |
-| **Microcontrolador** | Simula ESP32 e sensores | 🌐 **Wokwi** |
-| **Sensores** | Detecção PIR, IR, mmWave | 📡 **Sensores Virtuais** |
-| **Atuador** | Simula status do Ar Condicionado | 💡 **LED (Wokwi)** |
-| **Comunicação** | Intermediário de mensagens | 🦟 **MQTT Broker Público** |
-| **Cérebro (Edge)** | Processamento inteligente (Mangaba AI) | 🐧 **Notebook Linux** |
+Este script atua como o servidor central. Ele deve rodar antes ou durante a simulação.
 
------
-
-## 📁 Estrutura do Projeto
+**Instale a dependência:**
 
 ```bash
-xingo-cold-project/
-├── 📄 README.md           # Documentação
-├── 🔧 mangaba_ai_hub.py   # O Cérebro: Mangaba AI (Python)
-├── ⚡ main.ino            # O Corpo: Código do ESP32 (Wokwi)
-├── 🔌 diagram.json       # O Hardware: Diagrama do circuito (Wokwi)
-└── 🛠️ secrets.h         # Configurações de Rede (Wokwi)
+pip install paho-mqtt
 ```
 
------
-
-## 🚀 TUTORIAL RÁPIDO: Como Rodar
-
-### 🐧 Para Usuários Linux (Recomendado\!)
-
-1.  **Instale Python e dependências:**
-
-    ```bash
-    sudo apt update && sudo apt install python3 python3-pip
-    pip3 install paho-mqtt
-    ```
-
-2.  **Execute a Mangaba AI:**
-
-    ```bash
-    python3 mangaba_ai_hub.py
-    ```
-
-### 🪟 Para Usuários Windows
-
-1.  Instale o Python do [python.org](https://python.org).
-2.  Instale a biblioteca: `pip install paho-mqtt`
-3.  Execute: `python mangaba_ai_hub.py`
-
-
-### 🔌 Configurar ESP32 no Wokwi (Passo a Passo)
-
-Para rodar a simulação na nuvem, precisamos configurar o ambiente virtual.
-
-1.  **Crie um novo projeto:**
-    Acesse [Wokwi ESP32 Starter](https://wokwi.com/projects/new/esp32) para abrir um projeto em branco.
-
-2.  **Instale as Bibliotecas (Essencial):**
-    No editor do Wokwi, clique na aba **`Library Manager`** (ou crie um arquivo chamado `libraries.txt` clicando no **+**) e adicione o seguinte conteúdo:
-    ```text
-    PubSubClient
-    ArduinoJson
-    DHT sensor library
-    ```
-3.  **Configure o Hardware (`diagram.json`):**
-    Clique na aba `diagram.json` e substitua todo o código pelo conteúdo do arquivo `diagram.json` deste repositório.
-    *Isso montará automaticamente o ESP32, o Sensor DHT22, o Interruptor e o LED.*
-
-4.  **Configure a Rede (`secrets.h`):**
-    Clique na **▾** (seta ao lado de "Library Manager"), crie um novo arquivo chamado `secrets.h` e cole:
-    ```cpp
-    #define SECRET_SSID "Wokwi-GUEST"
-    #define SECRET_PASS ""
-    ```
-
-5.  **Carregue o Código (`main.ino`):**
-    Na aba principal `sketch.ino` (ou `main.ino`), apague tudo e cole o código C++ deste repositório.
-    *Certifique-se de que a linha `mqtt_server` aponta para `"test.mosquitto.org"`.*
-
-6.  **Rodar:**
-    Clique no botão **Play (▶️)** verde.
------
-
-## 📡 Tópicos MQTT
-
-| Tópico | Direção | Função |
-| :--- | :--- | :--- |
-| `mangaba/sala/sensor` | ESP32 → Mangaba AI | Envia dados de presença e temperatura |
-| `mangaba/sala/controle` | Mangaba AI → ESP32 | Envia comandos (LIGAR/DESLIGAR) AC |
-
------
-
-## 🔄 Fluxo da Demonstração (Demo Day)
-
-1.  **Iniciar:** Execute a Mangaba AI no Linux (`python3 mangaba_ai_hub.py`).
-2.  **Wokwi:** Inicie a simulação no navegador.
-3.  **Ação:** Clique nos sensores no Wokwi para simular presença.
-4.  **Reação em Cadeia:**
-      * ✅ ESP32 detecta movimento.
-      * ✅ Envia dados via MQTT.
-      * ✅ **Mangaba AI** processa (temperatura + histórico).
-      * ✅ Envia comando de volta.
-      * ✅ **LED acende** (Ar Condicionado LIGADO).
-5.  **Economia Inteligente:**
-      * ⏰ Mangaba AI monitora inatividade.
-      * 🧠 Decide desligar para economizar.
-      * ✅ **LED apaga**.
-
------
-
-## 🎊 O que esperar no Terminal
+**Execute o Hub:**
 
 ```bash
-🚀 Iniciando Mangaba AI no Linux (Equivalente Raspberry Pi)...
-✅ Conectado ao Broker MQTT!
-🎯 PIR: Presença detectada! | 🌡️ Temperatura: 31°C
-🔥 Temperatura ALTA! Ligando ar condicionado via PIR...
-💡 Comando ON enviado para o ESP32
+python mangaba_ai_hub.py
+```
+
+*O terminal ficará aguardando: `🧠 Iniciando Mangaba AI...`*
+
+-----
+
+### 2\. O Hardware (Simulação Wokwi)
+
+Para validar o hardware sem custos, usamos o simulador Wokwi.
+
+**Passo A: Configurar Bibliotecas (`libraries.txt`)**
+É crucial usar as bibliotecas corretas para o ESP32 virtual. Na aba `libraries.txt`, cole:
+
+```text
+PubSubClient
+ArduinoJson
+DHT sensor library for ESPx
+```
+
+**Passo B: Montar o Circuito (`diagram.json`)**
+Substitua o conteúdo da aba `diagram.json` pelo arquivo disponível na pasta `/docs` deste projeto.
+*Isso conecta automaticamente: DHT22 (Pino 32), PIR (Pino 27) e LED (Pino 25).*
+
+**Passo C: Carregar Firmware (`sketch.ino`)**
+Copie o código C++ fornecido para a aba principal. Verifique se as credenciais estão apontando para o gateway virtual:
+
+```cpp
+const char* SSID_NAME = "Wokwi-GUEST";
+const char* SSID_PASS = "";
+```
+
+**Passo D: Rodar**
+Clique no botão **Play (▶)** verde no Wokwi.
+
+-----
+
+## 🔄 Roteiro de Demonstração (Pitch)
+
+Siga este fluxo para apresentar aos juízes:
+
+1.  **Estado Inicial:** Mostre o terminal Python rodando e o Wokwi com o LED apagado.
+      * *Narrativa:* "O sistema está monitorando, mas como a sala está vazia, o AC permanece desligado para economizar."
+2.  **Ação 1 (Calor + Gente):**
+      * No Wokwi, clique no DHT22 e suba a temperatura para **28°C**.
+      * Clique no PIR e selecione "Simulate Motion".
+      * *Resultado:* O terminal mostra `🔥 Calor + presença` e o **LED Vermelho acende**.
+3.  **Ação 2 (Saída de Pessoas):**
+      * Pare a simulação de movimento no PIR.
+      * Aguarde 15 segundos (Timeout configurado).
+      * *Resultado:* O terminal mostra `❄️ Sala vazia` e o **LED apaga**.
+
+-----
+
+## 📁 Estrutura de Arquivos
+
+```bash
+Mangaba-Project/
+├── 📄 README.md           # Esta documentação
+├── 🧠 mangaba_ai_hub.py   # Script Python (Cérebro)
+├── ⚡ sketch.ino          # Firmware ESP32 C++
+└── 🔌 diagram.json        # Arquitetura de Hardware Wokwi
 ```
 
 -----
 
 <div align="center">
 
-**Xingó Cold & Mangaba AI**
-*Hackathon Energy 2025*
-</div>
+**Equipe Arrocha Árabe**
+*Rhuan Pablo • Gabriel Filipe • José Antônio • Ana Laylla • Daví Antonio*
+
+<i>Desenvolvido com ❤️ no Hackathon Energy AI 2025<i>
+
+<div>
+
+```
+```
