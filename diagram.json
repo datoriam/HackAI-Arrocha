@@ -1,13 +1,13 @@
 {
   "version": 1,
-  "author": "Mangaba Team",
+  "author": "Xingó Cold",
   "editor": "wokwi",
   "parts": [
-    { "type": "board-esp32-devkit-c", "id": "esp", "top": 0, "left": 0, "attrs": {} },
-    { "type": "wokwi-dht22", "id": "dht1", "top": -80, "left": 120, "attrs": {} },
-    { "type": "wokwi-slide-switch", "id": "sw1", "top": 120, "left": 150, "attrs": {} },
-    { "type": "wokwi-led", "id": "led1", "top": 50, "left": 150, "attrs": { "color": "green" } },
-    { "type": "wokwi-resistor", "id": "r1", "top": 100, "left": 200, "attrs": { "value": "220" } }
+    { "type": "board-esp32-devkit-v1", "id": "esp", "top": 0, "left": 0, "attrs": {} },
+    { "type": "wokwi-dht22", "id": "dht1", "top": -86.1, "left": 137.4, "attrs": {} },
+    { "type": "wokwi-slide-switch", "id": "sw1", "top": 126.8, "left": 156.9, "attrs": {} },
+    { "type": "wokwi-led", "id": "led1", "top": 54, "left": 167, "attrs": { "color": "green" } },
+    { "type": "wokwi-resistor", "id": "r1", "top": 147.95, "left": 230.4, "attrs": { "value": "220" } }
   ],
   "connections": [
     [ "esp:TX0", "$serialMonitor:RX", "", [] ],
