@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "author": "Mangaba AI",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-esp32", "id": "esp32", "top": 0, "left": 0, "attrs": {} },
+    { "type": "wokwi-pir", "id": "pir", "top": 0, "left": 300, "attrs": {} },
+    { "type": "wokwi-led", "id": "led", "top": 200, "left": 300, "attrs": { "color": "red" } },
+    { "type": "wokwi-resistor", "id": "r1", "top": 200, "left": 400, "attrs": { "value": "220" } }
+  ],
+  "connections": [
+    [ "pir:VCC", "esp32:3V3", "red", [ "v0" ] ],
+    [ "pir:GND", "esp32:GND", "black", [ "v1" ] ],
+    [ "pir:OUT", "esp32:27", "green", [ "v2" ] ],
+    [ "led:A", "esp32:25", "blue", [ "v3" ] ],
+    [ "led:C", "r1:1", "yellow", [ "v4" ] ],
+    [ "r1:2", "esp32:GND", "black", [ "v5" ] ]
+  ]
+}
