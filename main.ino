@@ -1,28 +1,33 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
+#include <ArduinoJson.h>
 
-// ================= CONFIGURAÇÃO WiFi =================
+// ================= CONFIGURAÇÃO =================
 const char* ssid = "Wokwi-GUEST";
 const char* password = "";
-
-// ================= CONFIGURAÇÃO MQTT =================
-const char* mqtt_server = "test.mosquitto.org";  // Broker público
+const char* mqtt_server = "test.mosquitto.org";
 
 // ================= PINOS =================
-const int PIR_PIN = 27;    // Sensor de movimento
-const int LED_PIN = 25;    // LED do ar condicionado
+const int PIR_PIN = 27;    
+const int IR_PIN = 26;     // Emulando sensor IR
+const int MMWAVE_PIN = 14; // Emulando sensor mmWave  
+const int LED_PIN = 25;
 
 // ================= TÓPICOS =================
-const char* topic_sensor = "mangaba/sala/sensor";    // ENVIA dados
-const char* topic_control = "mangaba/sala/controle"; // RECEBE comandos
+const char* topic_sensor = "mangaba/sala/sensor";
+const char* topic_control = "mangaba/sala/controle";
 
-// ================= VARIÁVEIS GLOBAIS =================
+// ================= VARIÁVEIS =================
 WiFiClient espClient;
 PubSubClient client(espClient);
+
 bool lastPirState = false;
+bool lastIrState = false; 
+bool lastMmwaveState = false;
 bool ledState = false;
 
-// ================= SETUP WiFi =================
+String sensorAtivo = "PIR"; // Pode alternar: "PIR", "IR", "MMWAVE"
+
 void setup_wifi() {
   delay(10);
   Serial.println();
@@ -41,14 +46,11 @@ void setup_wifi() {
   if (WiFi.status() == WL_CONNECTED) {
     Serial.println("");
     Serial.println("✅ WiFi conectado!");
-    Serial.print("📱 IP: ");
-    Serial.println(WiFi.localIP());
   } else {
     Serial.println("❌ Falha na conexão WiFi");
   }
 }
 
-// ================= CALLBACK MQTT =================
 void callback(char* topic, byte* message, unsigned int length) {
   Serial.print("📨 Mensagem recebida [");
   Serial.print(topic);
@@ -60,7 +62,6 @@ void callback(char* topic, byte* message, unsigned int length) {
   }
   Serial.println(messageTemp);
 
-  // Controle do LED/Ar Condicionado
   if (String(topic) == topic_control) {
     if (messageTemp == "ON") {
       digitalWrite(LED_PIN, HIGH);
@@ -74,20 +75,16 @@ void callback(char* topic, byte* message, unsigned int length) {
   }
 }
 
-// ================= RECONEXÃO MQTT =================
 void reconnect() {
   while (!client.connected()) {
     Serial.print("🔄 Tentando conexão MQTT...");
     
-    // Gera ID único para o cliente
     String clientId = "MangabaESP32-";
     clientId += String(random(0xffff), HEX);
     
     if (client.connect(clientId.c_str())) {
       Serial.println("✅ Conectado ao broker!");
       client.subscribe(topic_control);
-      Serial.print("📡 Inscrito no tópico: ");
-      Serial.println(topic_control);
     } else {
       Serial.print("❌ Falha, rc=");
       Serial.print(client.state());
@@ -97,42 +94,84 @@ void reconnect() {
   }
 }
 
-// ================= SETUP =================
+void enviarDadosSensor(String tipoSensor, bool movimento, float calor = 0, float confianca = 0, float distancia = 0) {
+  DynamicJsonDocument doc(200);
+  
+  doc["sensor_type"] = tipoSensor;
+  doc["movimento"] = movimento;
+  doc["timestamp"] = millis();
+  
+  // Dados específicos por sensor
+  if (tipoSensor == "IR") {
+    doc["calor"] = calor;
+  } else if (tipoSensor == "MMWAVE") {
+    doc["confianca"] = confianca;
+    doc["distancia"] = distancia;
+  }
+  
+  String jsonString;
+  serializeJson(doc, jsonString);
+  
+  client.publish(topic_sensor, jsonString.c_str());
+  
+  Serial.print("📤 Dados ");
+  Serial.print(tipoSensor);
+  Serial.print(" enviados: ");
+  Serial.println(jsonString);
+}
+
 void setup() {
   Serial.begin(115200);
   
-  // Configura pinos
   pinMode(PIR_PIN, INPUT);
+  pinMode(IR_PIN, INPUT);
+  pinMode(MMWAVE_PIN, INPUT); 
   pinMode(LED_PIN, OUTPUT);
-  digitalWrite(LED_PIN, LOW);  // Inicia com LED desligado
+  digitalWrite(LED_PIN, LOW);
   
-  Serial.println("🚀 Iniciando Sistema Mangaba...");
-  Serial.println("💡 Simulador de Gestão Energética");
+  Serial.println("🚀 Iniciando Sistema Mangaba Multi-Sensor...");
+  Serial.println("🎮 Sensores: PIR | IR | mmWave");
   
   setup_wifi();
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
-  
-  Serial.println("✅ Sistema inicializado! Aguardando movimento...");
 }
 
-// ================= LOOP PRINCIPAL =================
 void loop() {
   if (!client.connected()) {
     reconnect();
   }
   client.loop();
 
-  // Leitura do sensor PIR
+  // Leitura dos sensores (simulados no Wokwi)
   bool pirState = digitalRead(PIR_PIN);
+  bool irState = digitalRead(IR_PIN);
+  bool mmwaveState = digitalRead(MMWAVE_PIN);
   
-  // Detecta transição de movimento ( LOW -> HIGH )
+  // Detecção PIR
   if (pirState == HIGH && lastPirState == LOW) {
-    Serial.println("🚶 MOVIMENTO DETECTADO! Enviando para o Hub...");
-    client.publish(topic_sensor, "MOVIMENTO");
-    Serial.println("📤 Dados enviados para processamento");
+    Serial.println("🎯 PIR: Movimento detectado!");
+    enviarDadosSensor("PIR", true);
+  }
+  
+  // Detecção IR (emulando sensor de calor)
+  if (irState == HIGH && lastIrState == LOW) {
+    Serial.println("🎯 IR: Calor + movimento detectado!");
+    float calorSimulado = random(30, 40); // Temperatura corporal
+    enviarDadosSensor("IR", true, calorSimulado);
+  }
+  
+  // Detecção mmWave (emulando sensor avançado)
+  if (mmwaveState == HIGH && lastMmwaveState == LOW) {
+    Serial.println("🎯 mmWave: Detecção avançada!");
+    float confiancaSimulada = random(70, 95) / 100.0;
+    float distanciaSimulada = random(10, 50) / 10.0;
+    enviarDadosSensor("MMWAVE", true, 0, confiancaSimulada, distanciaSimulada);
   }
   
   lastPirState = pirState;
-  delay(100);  // Pequeno delay para estabilidade
+  lastIrState = irState;
+  lastMmwaveState = mmwaveState;
+  
+  delay(100);
 }
