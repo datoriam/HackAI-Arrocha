@@ -13,6 +13,7 @@ O **Arabian Nights** utiliza Inteligência Artificial para realizar o desejo de 
 Acesse nosso Dashboard interativo para visualizar a experiência do usuário final. Aqui apresentamos os dados de consumo, status do ambiente e as decisões tomadas pela IA.
 
 👉 **[ACESSE O DASHBOARD (BASE44)](https://arabian-nights-climate-control-431d16b9.base44.app)**
+👉 **[ACESSE O SLIDE]([https://arabian-nights-climate-control-431d16b9.base44.app](https://drive.google.com/file/d/1TT7j5H6PzuLajt1SgmPmfDLFlN464iFI/view?usp=sharing))**
 
 -----
 
@@ -35,6 +36,7 @@ O diferencial tecnológico do projeto é o uso do framework **Mangaba.AI** para 
 1.  **Agente de Conforto:** O especialista que garante o bem-estar térmico (baseado em normas ISO/ASHRAE).
 2.  **Agente Financeiro:** O tesoureiro que calcula o custo do kWh em tempo real e projeta a economia.
 3.  **Agente Controlador (IoT):** O executor que toma a decisão final (Ligar/Desligar/Ajustar) ponderando conforto vs. custo.
+
 
 
 ### 🏆 Hack.IA++ 2025
